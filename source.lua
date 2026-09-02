@@ -25,7 +25,7 @@ function HeliosLib.new(windowTitle, AccentColor)
 	
 	self.ScreenGui = Instance.new("ScreenGui")
 	self.ScreenGui.Name = "uihelios"
-	self.ScreenGui.ResetOnSpawn = true
+	self.ScreenGui.ResetOnSpawn = false
 	self.ScreenGui.IgnoreGuiInset = false
 	self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 

@@ -194,7 +194,7 @@ function HeliosLib.new(windowTitle, AccentColor)
 	line_2.AnchorPoint = Vector2.new(0.5, 0.5)
 	line_2.Size = UDim2.new(0, 1, 0, 290)
 	line_2.BackgroundColor3 = COLORS.Text
-	line_2.BackgroundTransparency = 0.95
+	line_2.BackgroundTransparency = 0.9
 	line_2.BorderSizePixel = 0
 	line_2.Parent = self.sidebar
 
@@ -246,6 +246,169 @@ function HeliosLib.new(windowTitle, AccentColor)
 
 	self.tabs = {}
 	self.activeTab = nil
+	
+	self.notifholder = Instance.new("Frame")
+	self.notifholder.Name = "notifHolder"
+	self.notifholder.ZIndex = 100
+	self.notifholder.AnchorPoint = Vector2.new(1, 1)
+	self.notifholder.Position = UDim2.new(1, -20, 1, -20)
+	self.notifholder.Size = UDim2.new(0, 260, 0, 400)
+	self.notifholder.BackgroundTransparency = 1
+	self.notifholder.Parent = self.ScreenGui
+
+	self.activeNotifs = {}
+	
+	--notificaiton system zz
+	function HeliosLib:_RepositionNotifs()
+		local yOffset = 8
+		for i = #self.activeNotifs, 1, -1 do
+			local n = self.activeNotifs[i]
+			if n and n.Parent then
+				TweenService:Create(n, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+					Position = UDim2.new(0, 0, 1, -yOffset)
+				}):Play()
+				yOffset = yOffset + n.AbsoluteSize.Y + 8
+			end
+		end
+	end
+	function HeliosLib:Notify(title, text, duration)
+		duration = (type(duration) == "number") and duration or 4
+
+		local notif = Instance.new("Frame")
+		notif.Name = "notification"
+		notif.ZIndex = 100
+		notif.AnchorPoint = Vector2.new(0, 1)
+		notif.Position = UDim2.new(0, 0, 1, 8)
+		notif.Size = UDim2.new(1, 0, 0, 0)
+		notif.AutomaticSize = Enum.AutomaticSize.Y
+		notif.BackgroundColor3 = COLORS.ElementBG
+		notif.BackgroundTransparency = 1
+		notif.BorderSizePixel = 0
+		notif.ClipsDescendants = true
+		notif.Parent = self.notifholder
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 8)
+		corner.Parent = notif
+
+		local stroke = Instance.new("UIStroke")
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		stroke.Color = COLORS.Stroke
+		stroke.Thickness = 0.8
+		stroke.Transparency = 1
+		stroke.Parent = notif
+
+		local shadow = Instance.new("UIShadow")
+		shadow.BlurRadius = UDim.new(0, 15)
+		shadow.Color = Color3.fromRGB(0, 0, 0)
+		shadow.Spread = UDim2.new(0, 5, 0, 5)
+		shadow.Transparency = 0.6
+		shadow.ZIndex = -1
+		shadow.Parent = notif
+
+		local accentBar = Instance.new("Frame")
+		accentBar.ZIndex = 101
+		accentBar.Size = UDim2.new(0, 3, 0, 0)
+		accentBar.Position = UDim2.new(0, 6, 0, 10)
+		accentBar.BackgroundColor3 = COLORS.Accent
+		accentBar.BackgroundTransparency = 1
+		accentBar.BorderSizePixel = 0
+		accentBar.Parent = notif
+
+		local barCorner = Instance.new("UICorner")
+		barCorner.CornerRadius = UDim.new(1, 0)
+		barCorner.Parent = accentBar
+
+		local textHolder = Instance.new("Frame")
+		textHolder.ZIndex = 101
+		textHolder.Size = UDim2.new(1, -20, 0, 0)
+		textHolder.Position = UDim2.new(0, 20, 0, 0)
+		textHolder.AutomaticSize = Enum.AutomaticSize.Y
+		textHolder.BackgroundTransparency = 1
+		textHolder.Parent = notif
+
+		local padding = Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, 4)
+		padding.PaddingRight = UDim.new(0, 12)
+		padding.PaddingTop = UDim.new(0, 10)
+		padding.PaddingBottom = UDim.new(0, 10)
+		padding.Parent = textHolder
+
+		local listLayout = Instance.new("UIListLayout")
+		listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		listLayout.Padding = UDim.new(0, 4)
+		listLayout.Parent = textHolder
+
+		local titleLabel = Instance.new("TextLabel")
+		titleLabel.ZIndex = 101
+		titleLabel.Size = UDim2.new(1, 0, 0, 16)
+		titleLabel.BackgroundTransparency = 1
+		titleLabel.Text = title or "Notification"
+		titleLabel.TextSize = 13
+		titleLabel.Font = Enum.Font.Roboto
+		titleLabel.TextColor3 = COLORS.Text
+		titleLabel.TextTransparency = 1
+		titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+		titleLabel.LayoutOrder = 1
+		titleLabel.Parent = textHolder
+
+		local textLabel = Instance.new("TextLabel")
+		textLabel.ZIndex = 101
+		textLabel.Size = UDim2.new(1, 0, 0, 0)
+		textLabel.AutomaticSize = Enum.AutomaticSize.Y
+		textLabel.BackgroundTransparency = 1
+		textLabel.Text = text or ""
+		textLabel.TextWrapped = true
+		textLabel.TextSize = 12
+		textLabel.Font = Enum.Font.Roboto
+		textLabel.TextColor3 = COLORS.Text
+		textLabel.TextTransparency = 1
+		textLabel.TextXAlignment = Enum.TextXAlignment.Left
+		textLabel.LayoutOrder = 2
+		textLabel.Parent = textHolder
+
+		local function syncBarHeight()
+			accentBar.Size = UDim2.new(0, 3, 0, math.max(textHolder.AbsoluteSize.Y - 20, 10))
+		end
+		textHolder:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncBarHeight)
+		syncBarHeight()
+
+		table.insert(self.activeNotifs, notif)
+
+		task.defer(function()
+			self:_RepositionNotifs()
+
+			local fadeIn = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+			TweenService:Create(notif, fadeIn, {BackgroundTransparency = 0.05}):Play()
+			TweenService:Create(stroke, fadeIn, {Transparency = 0.9}):Play()
+			TweenService:Create(titleLabel, fadeIn, {TextTransparency = 0}):Play()
+			TweenService:Create(textLabel, fadeIn, {TextTransparency = 0.25}):Play()
+			TweenService:Create(accentBar, fadeIn, {BackgroundTransparency = 0}):Play()
+		end)
+
+		task.delay(duration, function()
+			for i, n in ipairs(self.activeNotifs) do
+				if n == notif then
+					table.remove(self.activeNotifs, i)
+					break
+				end
+			end
+			self:_RepositionNotifs()
+
+			local fadeOut = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+			TweenService:Create(notif, fadeOut, {
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0, 0, notif.Position.Y.Scale, notif.Position.Y.Offset + 20)
+			}):Play()
+			TweenService:Create(stroke, fadeOut, {Transparency = 1}):Play()
+			TweenService:Create(titleLabel, fadeOut, {TextTransparency = 1}):Play()
+			TweenService:Create(textLabel, fadeOut, {TextTransparency = 1}):Play()
+			TweenService:Create(accentBar, fadeOut, {BackgroundTransparency = 1}):Play()
+
+			task.wait(0.3)
+			notif:Destroy()
+		end)
+	end
 	return self
 end
 
